@@ -1,0 +1,15 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+class Config:
+    AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+    AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+    DEPLOYMENT_NAME = os.getenv("DEPLOYMENT_NAME")
+    API_VERSION = os.getenv("API_VERSION")
+    SEARCH_SERVICE_NAME = os.getenv("SEARCH_SERVICE_NAME")
+    SUPPORT_SEARCH_INDEX_NAME = os.getenv("SUPPORT_SEARCH_INDEX_NAME")
+    METRICS_SEARCH_INDEX_NAME = os.getenv("METRICS_SEARCH_INDEX_NAME")
+    SEARCH_API_KEY = os.getenv("SEARCH_API_KEY")
+    SEARCH_API_VERSION = os.getenv("SEARCH_API_VERSION")
