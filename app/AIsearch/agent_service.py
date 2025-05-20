@@ -70,7 +70,7 @@ prompt = ChatPromptTemplate.from_messages([
      "- If the user asks about an 'issue' and it's unclear whether it's support or ticket related, ask them to clarify.\n"
      "- Ask for a date if the query relates to metrics but lacks one.\n"
      "- If a support query is vague, ask for clarification or list known issues.\n"
-     "- if user ask for table provide structured table markdown. \n"
+     "- if user ask for table provide structured table markdown. provide the data in a way that can be easily converted to a table in a spreadsheet or a markdown viewer \n"
      ),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),
