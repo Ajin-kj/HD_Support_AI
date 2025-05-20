@@ -1,4 +1,3 @@
-# agent_service.py
 from typing import List, Dict
 from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -7,6 +6,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.tools import StructuredTool
 from app.AIsearch.Metrics_service import search_metrics
 from app.AIsearch.Support_service import search_support
+from app.AIsearch.Ticket_service import search_tickets  # <-- New ticket vector search
 from app.config import Config
 import json
 
@@ -32,6 +32,10 @@ def metrics_tool(query: str, top_k: int = 1) -> str:
     results = search_metrics(query, top_k)
     return json.dumps(results, indent=2) if results else "No relevant metrics found."
 
+def ticket_tool(query: str, top_k: int = 3) -> str:
+    results = search_tickets(query, top_k)
+    return json.dumps(results, indent=2) if results else "No relevant ticket data found."
+
 # === Structured Tools ===
 support_tool_structured = StructuredTool.from_function(
     name="search_support",
@@ -45,19 +49,28 @@ metrics_tool_structured = StructuredTool.from_function(
     description="Search for performance metrics based on user query, such as dates, countries, reports."
 )
 
-tools = [support_tool_structured, metrics_tool_structured]
+ticket_tool_structured = StructuredTool.from_function(
+    name="search_tickets",
+    func=ticket_tool,
+    description="Search ticket summaries based on user query. Use this for queries mentioning incidents, ticket summaries, ticket issues, or resolutions."
+)
+
+# === Register All Tools ===
+tools = [support_tool_structured, metrics_tool_structured, ticket_tool_structured]
 
 # === Prompt Template ===
 prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are an assistant that calls internal tools for support or performance metrics.\n"
+     "You are an assistant that calls internal tools for support, performance metrics, or ticket summaries.\n"
      "Follow these rules:\n"
      "- Use `search_metrics` for performance/ report/ metrics queries with dates/locations (use top_k=1 or 2).\n"
-     "- In metrics query replace performance report with performance metrics for better result from AI search\n"
-     "- Use `search_support` for issue/log/error queries. Use top_k=3+ if vague.\n"
-     "- Make separate calls per country/date combo if needed.\n"
-     "- If query lacks date for metrics, ask for it.\n"
-     "- If support query is vague, ask for clarification or show known issues.\n"
+     "- In metrics query, replace 'performance report' with 'performance metrics' for better search results.\n"
+     "- Use `search_support` for logs, issues, or technical problems. Use top_k=3+ if vague.\n"
+     "- Use `search_tickets` for queries that mention 'tickets', 'incidents', 'resolutions', or ticket logs.\n"
+     "- If the user asks about an 'issue' and it's unclear whether it's support or ticket related, ask them to clarify.\n"
+     "- Ask for a date if the query relates to metrics but lacks one.\n"
+     "- If a support query is vague, ask for clarification or list known issues.\n"
+     "- if user ask for table provide structured table markdown. \n"
      ),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),
@@ -86,7 +99,7 @@ def run_agent_query(user_input: str, session_id: str):
     chat_history.append(HumanMessage(content=user_input))
     chat_history.append(AIMessage(content=response.get("output", "No response generated.")))
 
-    # Store back in session (redundant for in-memory but helpful for external storage later)
+    # Store back in session
     SESSION_STORE[session_id] = chat_history
 
     # Parse steps
