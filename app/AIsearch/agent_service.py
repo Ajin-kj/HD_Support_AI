@@ -7,6 +7,7 @@ from langchain_core.tools import StructuredTool
 from app.AIsearch.Metrics_service import search_metrics
 from app.AIsearch.Support_service import search_support
 from app.AIsearch.Ticket_service import search_tickets  # <-- New ticket vector search
+from app.AIsearch.dashboard_tool import dashboard_tool_structured
 from app.config import Config
 import json
 
@@ -32,7 +33,7 @@ def metrics_tool(query: str, top_k: int = 1) -> str:
     results = search_metrics(query, top_k)
     return json.dumps(results, indent=2) if results else "No relevant metrics found."
 
-def ticket_tool(query: str, top_k: int = 3) -> str:
+def ticket_tool(query: str, top_k: int = 1) -> str:
     results = search_tickets(query, top_k)
     return json.dumps(results, indent=2) if results else "No relevant ticket data found."
 
@@ -52,11 +53,13 @@ metrics_tool_structured = StructuredTool.from_function(
 ticket_tool_structured = StructuredTool.from_function(
     name="search_tickets",
     func=ticket_tool,
-    description="Search ticket summaries based on user query. Use this for queries mentioning incidents, ticket summaries, ticket issues, or resolutions."
+    description="Search ticket summaries based on user query. Use this for queries mentioning incidents, ticket summaries, ticket issues, or resolutions. Always keep k=1"
 )
 
+
+
 # === Register All Tools ===
-tools = [support_tool_structured, metrics_tool_structured, ticket_tool_structured]
+tools = [support_tool_structured, metrics_tool_structured, ticket_tool_structured,]
 
 # === Prompt Template ===
 prompt = ChatPromptTemplate.from_messages([
@@ -70,7 +73,7 @@ prompt = ChatPromptTemplate.from_messages([
      "- If the user asks about an 'issue' and it's unclear whether it's support or ticket related, ask them to clarify.\n"
      "- Ask for a date if the query relates to metrics but lacks one.\n"
      "- If a support query is vague, ask for clarification or list known issues.\n"
-     "- if user ask for table provide structured table markdown. provide the data in a way that can be easily converted to a table in a spreadsheet or a markdown viewer \n"
+
      ),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),

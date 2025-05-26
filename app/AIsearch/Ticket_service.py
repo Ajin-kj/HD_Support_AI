@@ -6,7 +6,7 @@ from app.config import Config
 
 logger = logging.getLogger(__name__)
 
-def search_tickets(query: str, k: int = 3):
+def search_tickets(query: str, k: int = 1):
     """Search ticket-summary-index for top k matching documents using description vector."""
     query_embedding = generate_query_embedding(query)
     if not query_embedding:
@@ -28,7 +28,7 @@ def search_tickets(query: str, k: int = 3):
                 "kind": "vector",
                 "vector": query_embedding,
                 "fields": "descriptionVector",
-                "k": k
+                "k": 1
             }
         ],
         "select": "id,date,description,content"
@@ -44,4 +44,3 @@ def search_tickets(query: str, k: int = 3):
     except Exception as e:
         logger.error(f"Search error: {e}")
         return []
-
